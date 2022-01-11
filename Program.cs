@@ -9,6 +9,13 @@ namespace AlgorithmsSession
     {
         static void Main()
         {
+            MakeFile2("file.txt", 10);
+
+            DoPolypathNaturalSort("file.txt", 3);
+        }
+
+        static void MakeGraph()
+        {
             Tree tree = new Tree();
             for (int i = 0; i < 4; i++)
                 tree.AddNode();
@@ -25,11 +32,11 @@ namespace AlgorithmsSession
             tree.AddLink(10,10 ,6 ,7 );
             tree.AddLink(2, 2,7 ,8 );*/
 
-            
-            tree.AddLink(2,1,0,2);
-            tree.AddLink(3,1,2,1);
+
+            tree.AddLink(2, 1, 0, 2);
+            tree.AddLink(3, 1, 2, 1);
             tree.AddLink(1, 10, 0, 1);
-            tree.AddLink(4,1,1,3);
+            tree.AddLink(4, 1, 1, 3);
 
             List<double> links = tree.BreadthWaySearch(0);
             foreach (var node in links)
@@ -54,6 +61,136 @@ namespace AlgorithmsSession
             foreach (int el in array)
                 Console.Write(el + " ");
         }
+        //Внешняя многопутевая естественная сортировка слиянием
+        #region
+        static void MakeFile2(string filePath, int count)
+        {
+            Random rnd = new Random();
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+            StreamWriter file = new StreamWriter(filePath);
+
+            for (int i = 0; i < count; i++)
+                file.WriteLine(rnd.Next(100));
+
+            file.Close();
+        }
+        static void DoPolypathNaturalSort(string filePath, int fileCount)
+        {
+            while(DivideFile(filePath, fileCount))
+            {
+                MergeFiles(filePath, fileCount);
+            }
+        }
+        static bool DivideFile(string originFilePath, int fileCount)
+        {
+            StreamReader file = new StreamReader(originFilePath);
+
+            for (int i = 0; i < fileCount; i++)
+                if (File.Exists(i + ".txt"))
+                    File.Delete(i + ".txt");
+
+            StreamWriter[] resultFile = new StreamWriter[fileCount];
+            for (int i = 0; i < fileCount; i++)
+                resultFile[i] = new StreamWriter(i + ".txt");
+
+            string line = file.ReadLine();
+            int curNum = int.MinValue, lastNum;
+            int curFileNum = 0;
+            bool isSorted = true;
+            while (line != null)
+            {
+                lastNum = curNum;
+                curNum = Int32.Parse(line);
+
+                if (lastNum > curNum)
+                {
+                    curFileNum = (curFileNum + 1) % fileCount;
+                    isSorted = false;
+                }
+                    
+                resultFile[curFileNum].WriteLine(line);
+                
+                line = file.ReadLine();
+            }
+
+            file.Close();
+            for (int i = 0; i < fileCount; i++)
+                resultFile[i].Close();
+
+            return !isSorted;
+        }
+        static void MergeFiles(string resultFilePath, int fileCount)
+        {
+            if (File.Exists(resultFilePath))
+                File.Delete(resultFilePath);
+            StreamWriter resultFile = new StreamWriter(resultFilePath);
+
+            StreamReader[] file = new StreamReader[fileCount];
+            for (int i = 0; i < fileCount; i++)
+                file[i] = new StreamReader(i + ".txt");
+
+            LinkedList<int> curFileNums = new LinkedList<int>();
+            string[] lines = new string[fileCount];
+            int[] nums = new int[fileCount];
+            int[] lastNums = new int[fileCount];
+            for (int i = 0; i < fileCount; i++)
+            {
+                lines[i] = file[i].ReadLine();
+                if (lines[i] != null)
+                {
+                    nums[i] = Int32.Parse(lines[i]);
+                    curFileNums.AddLast(i);
+                }
+            }
+
+            while (curFileNums.Count > 0)
+            {
+                while (curFileNums.Count > 0)
+                {
+                    int fileNum = GetFileNumWithMinNum();
+
+                    resultFile.WriteLine(lines[fileNum]);
+                    lines[fileNum] = file[fileNum].ReadLine();
+                    if (lines[fileNum] == null)
+                    {
+                        curFileNums.Remove(fileNum);
+                    }
+                    else
+                    {
+                        lastNums[fileNum] = nums[fileNum];
+                        nums[fileNum] = Int32.Parse(lines[fileNum]);
+                        if (lastNums[fileNum] > nums[fileNum])
+                            curFileNums.Remove(fileNum);
+                    }
+                }
+
+                for (int i = 0; i < fileCount; i++)
+                    if (lines[i] != null)
+                        curFileNums.AddLast(i);
+            }
+
+            resultFile.Close();
+            for (int i = 0; i < fileCount; i++)
+                file[i].Close();
+
+            int GetFileNumWithMinNum()
+            {
+                int fileNum = -1;
+                int minNum = int.MaxValue;
+                foreach(int i in curFileNums)
+                {
+                    if (nums[i] < minNum)
+                    {
+                        minNum = nums[i];
+                        fileNum = i;
+                    }
+                }
+
+                return fileNum;
+            }
+        }
+        #endregion
         //Всё с графом
         #region
         class Tree
