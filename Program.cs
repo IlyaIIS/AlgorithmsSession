@@ -9,9 +9,7 @@ namespace AlgorithmsSession
     {
         static void Main()
         {
-            MakeFile2("file.txt", 10);
-
-            DoPolypathNaturalSort("file.txt", 3);
+            DoSort();
         }
 
         static void MakeGraph()
@@ -43,6 +41,140 @@ namespace AlgorithmsSession
                 Console.Write(node + " ");
         }
 
+        //Тренировка (переделка)
+        #region
+        static string[] DoABCSort(string[] array)
+        {
+            List<string> result = new List<string>();
+
+            int?[] indexes = new int?[array.Length];
+            List<int?[]> levels = new List<int?[]>();
+
+            levels.Add(new int?[26]);
+
+            int depth = 0;
+            for (int i = 0; i < array.Length; i++)
+            {
+                int letter = Char.ToUpper(array[i][depth]) - 65;
+                indexes[i] = levels[depth][letter];
+                levels[depth][letter] = i;
+            }
+
+            ClearLevel(0);
+
+            return result.ToArray();
+
+            void ClearLevel(int depth)
+            {
+                if (depth == levels.Count - 1)
+                    levels.Add(new int?[26]);
+
+                for (int letter = 0; letter < 26; letter++)
+                {
+                    if (levels[depth][letter] != null)
+                    {
+                        int index = levels[depth][letter].GetValueOrDefault();
+                        if (indexes[index] == null)
+                        {
+                            result.Add(array[index]);
+                        }
+                        else
+                        {
+                            GoThroughChain(index, depth + 1);
+                            ClearLevel(depth + 1);
+                        }
+
+                        levels[depth][letter] = null;
+                    }
+                }
+            }
+            void GoThroughChain(int index, int depth)
+            {
+                int? nextIndex;
+                while (true)
+                {
+                    nextIndex = indexes[index];
+
+                    if (depth < array[index].Length)
+                    {
+                        int letter = Char.ToUpper(array[index][depth]) - 65;
+                        indexes[index] = levels[depth][letter];
+                        levels[depth][letter] = index;
+                    }
+                    else
+                    {
+                        result.Add(array[index]);
+                        indexes[index] = null;
+                    }
+
+                    if (nextIndex != null)
+                        index = nextIndex.GetValueOrDefault();
+                    else
+                        break;
+                }
+            }
+        }
+        static int[] DoRadixSort(int[] array)
+        {
+            List<LinkedList<int>[]> levels = new List< LinkedList<int>[]>();
+            levels.Add(new LinkedList<int>[10]);
+            for (int i = 0; i < 10; i++)
+                levels[0][i] = new LinkedList<int>();
+            foreach (int el in array)
+                levels[0][GetNumDigit(el, 0).GetValueOrDefault()].AddLast(el);
+
+            int depth = 0;
+            bool isEnd = false;
+            while (!isEnd)
+            {
+                levels.Add(new LinkedList<int>[10]);
+                for (int i = 0; i < 10; i++)
+                    levels[depth+1][i] = new LinkedList<int>();
+
+                isEnd = true;
+                for (int i = 0; i < 10; i++)
+                {
+                    var list = levels[depth][i];
+                    var curEl = list.First;
+                    var nextEl = curEl;
+                    while (curEl != null)
+                    {
+                        nextEl = curEl.Next;
+                        int? digit = GetNumDigit(curEl.Value, depth + 1);
+                        if (digit != null)
+                        {
+                            levels[depth + 1][digit.GetValueOrDefault()].AddLast(curEl.Value);
+                            list.Remove(curEl);
+                            isEnd = false;
+                        }
+                        curEl = nextEl;
+                    }
+                }
+
+                depth++;
+            }
+
+            List<int> result = new List<int>();
+
+            foreach (var level in levels)
+                foreach (var el in level)
+                    foreach (int num in el)
+                        result.Add(num);
+
+            return result.ToArray();
+
+            int? GetNumDigit(int num, int pos)
+            {
+                string str = num.ToString();
+                pos = str.Length - 1 - pos;
+                if (pos >= 0)
+                    return str[pos] - 48;
+                else
+                    return null;
+            }
+        }
+        #endregion
+
         static void DoSort()
         {
             Random rnd = new Random();
@@ -55,11 +187,29 @@ namespace AlgorithmsSession
             foreach (int el in array)
                 Console.Write(el + " ");
 
-            DoBiderectionalSort(ref array);
+            DoQuickSort(ref array, 0, array.Length - 1);
 
             Console.WriteLine("\n");
             foreach (int el in array)
                 Console.Write(el + " ");
+        }
+        static void DoStringSort()
+        {
+            Random rnd = new Random();
+            string[] array = new string[1000];
+
+            for (int i = 0; i < array.Length; i++)
+                for (int j = 0; j < 2 + rnd.Next(5); j++)
+                    array[i] += (char)(65 + rnd.Next(26));
+
+            foreach (string word in array)
+                Console.Write(word + " ");
+
+            string[] result = DoABCSort(array);
+
+            Console.WriteLine("\n");
+            foreach (string word in result)
+                Console.Write(word + " ");
         }
         //Внешняя многопутевая естественная сортировка слиянием
         #region
@@ -1021,7 +1171,7 @@ namespace AlgorithmsSession
                     while (array[hi] > pivot)
                         hi--;
 
-                    if (lo <= hi)
+                    if (lo < hi)
                     {
                         int temp = array[lo];
                         array[lo] = array[hi];
