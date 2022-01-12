@@ -182,15 +182,15 @@ namespace AlgorithmsSession
             int[] array = new int[1000];
 
             for (int i = 0; i < array.Length; i++)
-                array[i] = rnd.Next(100);
+                array[i] = rnd.Next(200);
 
             foreach (int el in array)
                 Console.Write(el + " ");
 
-            DoQuickSort(ref array, 0, array.Length - 1);
+            int[] result = DoMaxsRadixSort( array);
 
             Console.WriteLine("\n");
-            foreach (int el in array)
+            foreach (int el in result)
                 Console.Write(el + " ");
         }
         static void DoStringSort()
@@ -923,6 +923,42 @@ namespace AlgorithmsSession
                 return item % Size;
             }
         }
+        public static int[] DoMaxsRadixSort(int[] arr)
+        {
+            return DoRecursiveRadixSort(arr);
+
+            int[] DoRecursiveRadixSort(int[] arr, int Index = 1)
+            {
+                var sortArr = new List<System.Collections.Generic.Queue<int>>();
+                for (var j = 0; j < 10; j++)
+                    sortArr.Add(new System.Collections.Generic.Queue<int>());
+
+                foreach (var item in arr)
+                    sortArr[(int)(item % Math.Pow(10, Index) / Math.Pow(10, Index - 1))].Enqueue(item);
+
+                bool isEnd = false;
+                if (sortArr[0].Count == arr.Length)
+                    isEnd = true;
+
+                var result = new int[arr.Length];
+                int i = 0;
+                foreach (var item in sortArr)
+                {
+                    while (item.Count > 0)
+                    {
+                        result[i] = item.Dequeue();
+                        i++;
+                    }
+                }
+
+                if (isEnd)
+                    return result;
+                else
+                    return DoRecursiveRadixSort(result, ++Index);
+            }
+        }
+
+        
         static int[] RadixSortLSD(int[] array)
         {
             List<Dictionary<int, LinkedList<int>>> levels = new List<Dictionary<int, LinkedList<int>>>();
@@ -1171,7 +1207,7 @@ namespace AlgorithmsSession
                     while (array[hi] > pivot)
                         hi--;
 
-                    if (lo < hi)
+                    if (lo <= hi)
                     {
                         int temp = array[lo];
                         array[lo] = array[hi];
